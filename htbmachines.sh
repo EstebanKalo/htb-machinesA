@@ -71,9 +71,16 @@ function updateFiles(){
 function searchMachine(){
   machineName="$1"
   
-  echo -e "\n${yellowColour}[+]${endColour} Listando las propiedades de la maquina${endColour}${blueColour} ${machineName}${endColour}${grayColour}:${endColour}"
-  
-  cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+  machineName_checker="$(cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//')"
+ 
+  if [ "$machineName_checker" ] ; then
+
+    echo -e "\n${yellowColour}[+]${endColour} Listando las propiedades de la maquina${endColour}${blueColour} ${machineName}${endColour}${grayColour}:${endColour}"
+    
+    cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+  else
+    echo -e "\n${yellowColour}[!]${endColour}${redColour} La maquina proporcionada no existe${endColour}"
+  fi 
 }
 
 function searchIP(){
