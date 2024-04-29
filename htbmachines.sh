@@ -126,19 +126,35 @@ function getOperativeSystem(){
   fi
 }
 
-# Indicadores
+function getOSDifficulty(){
+difficulty="$1"
+operativeSystem="$2"
 
+check_results="$(cat bundle.js | grep "so: \"$operativeSystem\"" -C 4 | grep "dificultad: \"$difficulty\"" -B 5 | grep "name" | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+if [ "$check_results" ]; then
+echo -e "\n${yellowColour}[+]${endColour}${grayColour} Se va a aplicar un filtro por la dificultad${endColour}${blueColour} $difficulty${endColour}${grayColour} y los sistemas operativos que sean${endColour}${purpleColour} $operativeSystem${endColour}\n"
+cat bundle.js | grep "so: \"$operativeSystem\"" -C 4 | grep "dificultad: \"$difficulty\"" -B 5 | grep "name" | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+else
+echo -e "\n${yellowColour}[!]${endColour}${redColour} El sistema operativo o la dificultad buscada no existe${endColour}"
+fi
+}
+
+# Indicadores
 
 declare -i parameter_counter=0 
 
+# Delatores
+
+declare -i delator_difficulty=0
+declare -i delator_os=0
 
 while getopts "m:ui:d:hs:" arg; do 
  case $arg in 
      m) machineName="$OPTARG"; let parameter_counter+=1;;
      u) let parameter_counter+=2;;
      i) ipAddress="$OPTARG"; let parameter_counter+=3;;
-     d) difficulty="$OPTARG"; let parameter_counter+=4;;
-     s) operativeSystem="$OPTARG"; let parameter_counter+=5;;
+     d) difficulty="$OPTARG"; delator_difficulty=1; let parameter_counter+=4;;
+     s) operativeSystem="$OPTARG"; delator_os=1; let parameter_counter+=5;;
      h) ;; 
  esac  
 done
@@ -153,6 +169,8 @@ elif [ $parameter_counter -eq 4 ]; then
   getMachinesDifficulty $difficulty
 elif [ $parameter_counter -eq 5 ]; then
 getOperativeSystem $operativeSystem
+elif [ $delator_difficulty -eq 1 ] && [ $delator_os -eq 1 ]; then
+  getOSDifficulty $difficulty $operativeSystem
 else
   helpPanel
 fi 
