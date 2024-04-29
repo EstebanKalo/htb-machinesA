@@ -25,12 +25,18 @@ trap ctrl_c INT
 main_url="https://htbmachines.github.io/bundle.js"
 
 
+
+
 # Funciones
+
 
 function helpPanel(){
   echo -e "\n${yellowColour}[+]${endColour} ${grayColour} Uso:${endColour}"
   echo -e "\t${purpleColour}u)${endColour}${grayColour} Descargar o actualizar archivos necesarios${endColour}\n"
   echo -e "\t${purpleColour}m)${endColour}${grayColour} Buscar por un nombre de maquina${endColour}\n"
+  echo -e "\t${purpleColour}i)${endColour} ${grayColour}Buscar por direccion IP${endColour}\n"
+  echo -e "\t${purpleColour}d)${endColour}${grayColour} Buscar por el nivel de dificultad de la maquina${endColour}\n"
+  echo -e "\t${purpleColour}s)${endColour}${grayColour} Buscar por el sistema operativo de la maquina${endColour}\n"
   echo -e "\t${purpleColour}h)${endColour}${grayColour} Mostrar este panel de ayuda${endColour}\n"
 }
 
@@ -70,19 +76,69 @@ function updateFiles(){
 function searchMachine(){
   machineName="$1"
   
-  echo -e "\n${yellowColour}[+]${endColour} Listando las propiedades de la maquina${endColour}${blueColour} ${machineName}${endColour}${grayColour}:${endColour}"
+  machineName_checker="$(cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//')"
+ 
+  if [ "$machineName_checker" ] ; then
+
+    echo -e "\n${yellowColour}[+]${endColour} Listando las propiedades de la maquina${endColour}${blueColour} ${machineName}${endColour}${grayColour}:${endColour}"
+    
+    cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+  else
+    echo -e "\n${yellowColour}[!]${endColour}${redColour} La maquina proporcionada no existe${endColour}"
+  fi 
+}
+
+function searchIP(){
+  ipAddress="$1"
+
+  machineName="$(cat bundle.js | grep "ip: \"$ipAddress\"" -B 3 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',')" 
   
-  cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+  if [ "$machineName" ]; then
+
+    echo -e "\n${yellowColour}[+]${endColour}${grayColour} La maquina correspondiente para la IP${endColour}${blueColour} $ipAddress${endColour}${grayColour} es${endColour}${purpleColour} $machineName${endColour}\n"
+  else
+    echo -e "\n${yellowColour}[!]${endColour}${redColour} La IP proporcionada no existe${endColour}"
+  fi
+}
+
+function getMachinesDifficulty(){
+  difficulty="$1"
+
+  resultsCheckDifficulty="$(cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+
+  if [ "$resultsCheckDifficulty" ]; then
+    echo -e "\n${yellowColour}[+]${grayColour} Representando las maquinas que poseen el nivel de dificultad${endColour}${purpleColour} $difficulty${endColour}${grayColour}:${endColour}\n"
+    cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+  else 
+    echo -e "\n${yellowColour}[!]${endColour}${redColour} La dificultad indicada no existe${endColour}"
+  fi
+}
+
+function getOperativeSystem(){
+  operativeSystem="$1"
+  resultsCheckSO="$(cat bundle.js | grep "so: \"$operativeSystem\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+
+  if [ "$resultsCheckSO" ] ; then
+  echo -e "\n${yellowColour}[+]${grayColour} Representando las maquinas con sistema operativo${endColour}${purpleColour} $operativeSystem${endColour}${grayColour}:${endColour}\n"
+  cat bundle.js | grep "so: \"$operativeSystem\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+  else
+    echo -e "\n${yellowColour}[!]${endColour}${redColour} El sistema operativo buscado no existe${endColour}"
+  fi
 }
 
 # Indicadores
+
+
 declare -i parameter_counter=0 
 
 
-while getopts "m:uh" arg; do 
+while getopts "m:ui:d:hs:" arg; do 
  case $arg in 
-     m) machineName=$OPTARG; let parameter_counter+=1;;
+     m) machineName="$OPTARG"; let parameter_counter+=1;;
      u) let parameter_counter+=2;;
+     i) ipAddress="$OPTARG"; let parameter_counter+=3;;
+     d) difficulty="$OPTARG"; let parameter_counter+=4;;
+     s) operativeSystem="$OPTARG"; let parameter_counter+=5;;
      h) ;; 
  esac  
 done
@@ -90,8 +146,13 @@ done
 if [ $parameter_counter -eq 1 ] ; then
   searchMachine $machineName
 elif [ $parameter_counter -eq 2 ]; then
- updateFiles
-
+  updateFiles
+elif [ $parameter_counter -eq 3 ]; then
+  searchIP $ipAddress
+elif [ $parameter_counter -eq 4 ]; then
+  getMachinesDifficulty $difficulty
+elif [ $parameter_counter -eq 5 ]; then
+getOperativeSystem $operativeSystem
 else
   helpPanel
 fi 
