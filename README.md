@@ -9,12 +9,6 @@ Este script en Bash te permite buscar información sobre máquinas de Hack The B
 - `curl`: Para descargar archivos de Internet.
 - `js-beautify`: Para darle formato al archivo `bundle.js`.
 - `sponge`: Para sobrescribir archivos de manera segura.
-  
-Puedes instalar los requisitos con los siguientes comandos:
-
-```bash
-sudo apt install curl js-beautify moreutils
-```
 
 ## Uso
 
@@ -68,8 +62,3 @@ El script ofrece diferentes opciones para interactuar con la base de datos de HT
 ## Contribuciones
 
 Si encuentras algún problema o deseas agregar nuevas funcionalidades, siéntete libre de hacer un fork y abrir un pull request.
-
-## Licencia
-
-Este proyecto está bajo la Licencia MIT. 
-```
