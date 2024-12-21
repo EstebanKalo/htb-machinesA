@@ -1,6 +1,4 @@
-#!/bin/bash
-
-#Colours
+# Colours
 greenColour="\e[0;32m\033[1m"
 endColour="\033[0m\e[0m"
 redColour="\e[0;31m\033[1m"
@@ -25,11 +23,7 @@ trap ctrl_c INT
 
 main_url="https://htbmachines.github.io/bundle.js"
 
-
-
-
 # Funciones
-
 
 function helpPanel(){
   echo -e "\n${yellowColour}[+]${endColour} ${grayColour} Uso:${endColour}"
@@ -42,7 +36,6 @@ function helpPanel(){
 }
 
 function updateFiles(){
-  
   if [ ! -f bundle.js ]; then
     tput civis
     echo -e "\n${yellowColour}[+]${endColour}${grayColour} Descargando archivos necesarios...${endColour}\n"
@@ -74,16 +67,18 @@ function updateFiles(){
   fi
 }
 
-function searchMachine(){
-  machineName="$1"
-  
-  machineName_checker="$(cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//')"
- 
-  if [ "$machineName_checker" ] ; then
+function normalizeText(){
+  echo "$1" | iconv -f utf8 -t ascii//TRANSLIT | tr '[:upper:]' '[:lower:]'
+}
 
-    echo -e "\n${yellowColour}[+]${endColour} Listando las propiedades de la maquina${endColour}${blueColour} ${machineName}${endColour}${grayColour}:${endColour}"
-    
-    cat bundle.js | awk "/name: \"$machineName\"/,/resuelta:/" | grep -vE "id:|sku:|resuelta:" | tr -d '"' | tr -d ',' | sed 's/^ *//'
+function searchMachine(){
+  machineName=$(normalizeText "$1")
+
+  machineName_checker=$(cat bundle.js | iconv -f utf8 -t ascii//TRANSLIT | grep -i "name: \"$machineName\"" -A 5 | awk '/name:/{print}' | tr -d '"' | tr -d ',' | sed 's/^ *//')
+
+  if [ "$machineName_checker" ] ; then
+    echo -e "\n${yellowColour}[+]${endColour} Listando las propiedades de la maquina${endColour}${blueColour} ${1}${endColour}${grayColour}:${endColour}"
+    cat bundle.js | iconv -f utf8 -t ascii//TRANSLIT | grep -i "name: \"$machineName\"" -A 5 | awk '{print}' | tr -d '"' | tr -d ',' | sed 's/^ *//'
   else
     echo -e "\n${yellowColour}[!]${endColour}${redColour} La maquina proporcionada no existe${endColour}"
   fi 
@@ -92,10 +87,9 @@ function searchMachine(){
 function searchIP(){
   ipAddress="$1"
 
-  machineName="$(cat bundle.js | grep "ip: \"$ipAddress\"" -B 3 | grep "name: " | awk 'NF{print $NF}' | tr -d '"' | tr -d ',')" 
+  machineName=$(cat bundle.js | iconv -f utf8 -t ascii//TRANSLIT | grep "ip: \"$ipAddress\"" -B 3 | grep -i "name:" | awk 'NF{print $NF}' | tr -d '"' | tr -d ',') 
   
   if [ "$machineName" ]; then
-
     echo -e "\n${yellowColour}[+]${endColour}${grayColour} La maquina correspondiente para la IP${endColour}${blueColour} $ipAddress${endColour}${grayColour} es${endColour}${purpleColour} $machineName${endColour}\n"
   else
     echo -e "\n${yellowColour}[!]${endColour}${redColour} La IP proporcionada no existe${endColour}"
@@ -103,49 +97,35 @@ function searchIP(){
 }
 
 function getMachinesDifficulty(){
-  difficulty="$1"
+  difficulty=$(normalizeText "$1")
 
-  resultsCheckDifficulty="$(cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+  resultsCheckDifficulty=$(cat bundle.js | iconv -f utf8 -t ascii//TRANSLIT | grep -i "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)
 
   if [ "$resultsCheckDifficulty" ]; then
-    echo -e "\n${yellowColour}[+]${grayColour} Representando las maquinas que poseen el nivel de dificultad${endColour}${purpleColour} $difficulty${endColour}${grayColour}:${endColour}\n"
-    cat bundle.js | grep "dificultad: \"$difficulty\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+    echo -e "\n${yellowColour}[+]${grayColour} Representando las maquinas que poseen el nivel de dificultad${endColour}${purpleColour} $1${endColour}${grayColour}:${endColour}\n"
+    echo "$resultsCheckDifficulty"
   else 
     echo -e "\n${yellowColour}[!]${endColour}${redColour} La dificultad indicada no existe${endColour}"
   fi
 }
 
 function getOperativeSystem(){
-  operativeSystem="$1"
-  resultsCheckSO="$(cat bundle.js | grep "so: \"$operativeSystem\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
+  operativeSystem=$(normalizeText "$1")
+
+  resultsCheckSO=$(cat bundle.js | iconv -f utf8 -t ascii//TRANSLIT | grep -i "so: \"$operativeSystem\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)
 
   if [ "$resultsCheckSO" ] ; then
-  echo -e "\n${yellowColour}[+]${grayColour} Representando las maquinas con sistema operativo${endColour}${purpleColour} $operativeSystem${endColour}${grayColour}:${endColour}\n"
-  cat bundle.js | grep "so: \"$operativeSystem\"" -B 5 | grep name | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
+  echo -e "\n${yellowColour}[+]${grayColour} Representando las maquinas con sistema operativo${endColour}${purpleColour} $1${endColour}${grayColour}:${endColour}\n"
+  echo "$resultsCheckSO"
   else
     echo -e "\n${yellowColour}[!]${endColour}${redColour} El sistema operativo buscado no existe${endColour}"
   fi
 }
 
-function getOSDifficulty(){
-difficulty="$1"
-operativeSystem="$2"
-
-check_results="$(cat bundle.js | grep "so: \"$operativeSystem\"" -C 4 | grep "dificultad: \"$difficulty\"" -B 5 | grep "name" | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column)"
-if [ "$check_results" ]; then
-echo -e "\n${yellowColour}[+]${endColour}${grayColour} Se va a aplicar un filtro por la dificultad${endColour}${blueColour} $difficulty${endColour}${grayColour} y los sistemas operativos que sean${endColour}${purpleColour} $operativeSystem${endColour}\n"
-cat bundle.js | grep "so: \"$operativeSystem\"" -C 4 | grep "dificultad: \"$difficulty\"" -B 5 | grep "name" | awk 'NF{print $NF}' | tr -d '"' | tr -d ',' | column
-else
-echo -e "\n${yellowColour}[!]${endColour}${redColour} El sistema operativo o la dificultad buscada no existe${endColour}"
-fi
-}
-
 # Indicadores
-
 declare -i parameter_counter=0 
 
 # Delatores
-
 declare -i delator_difficulty=0
 declare -i delator_os=0
 
@@ -172,8 +152,6 @@ elif [ $parameter_counter -eq 4 ]; then
   getMachinesDifficulty $difficulty
 elif [ $parameter_counter -eq 5 ]; then
 getOperativeSystem $operativeSystem
-elif [ $delator_difficulty -eq 1 ] && [ $delator_os -eq 1 ]; then
-  getOSDifficulty $difficulty $operativeSystem
 else
   helpPanel
 fi
